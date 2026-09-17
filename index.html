@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toodo</title>
+<style>
+  :root{
+    --bg:#f2f3fa;
+    --bg-grad:radial-gradient(circle at 15% 0%, #eef0ff 0%, #f2f3fa 45%);
+    --panel:#ffffff;
+    --panel-2:#f8f9fe;
+    --border:#e7e8f3;
+    --text:#1e2030;
+    --text-dim:#8b8ea0;
+    --accent:#6c63ff;
+    --accent-2:#8f7dff;
+    --accent-dim:#eeecff;
+    --danger:#ff5f7e;
+    --done:#c3c5d6;
+    --radius:16px;
+    --radius-sm:11px;
+    --shadow:0 2px 14px rgba(50,50,100,0.06), 0 1px 2px rgba(50,50,100,0.04);
+    --shadow-lift:0 10px 24px rgba(60,60,120,0.12);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14151f;
+      --bg-grad:radial-gradient(circle at 15% 0%, #1b1c2c 0%, #14151f 45%);
+      --panel:#1c1d2b;
+      --panel-2:#23243c;
+      --border:#2c2d3f;
+      --text:#eceefb;
+      --text-dim:#8d8fa8;
+      --accent:#8b83ff;
+      --accent-2:#7c6dff;
+      --accent-dim:#2a2856;
+      --danger:#ff6f8a;
+      --done:#4c4e64;
+      --shadow:0 2px 16px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-lift:0 14px 30px rgba(0,0,0,0.45);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14151f;
+    --bg-grad:radial-gradient(circle at 15% 0%, #1b1c2c 0%, #14151f 45%);
+    --panel:#1c1d2b;
+    --panel-2:#23243c;
+    --border:#2c2d3f;
+    --text:#eceefb;
+    --text-dim:#8d8fa8;
+    --accent:#8b83ff;
+    --accent-2:#7c6dff;
+    --accent-dim:#2a2856;
+    --danger:#ff6f8a;
+    --done:#4c4e64;
+    --shadow:0 2px 16px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-lift:0 14px 30px rgba(0,0,0,0.45);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--bg-grad);
+    background-color:var(--bg);
+    color:var(--text);
+    transition:background-color .25s ease, color .25s ease;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:760px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+  header.top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:22px;
+  }
+  header.top h1{
+    font-size:22px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.03em;
+  }
+  header.top h1 span{
+    background:linear-gradient(120deg, var(--accent), var(--accent-2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .top-actions{display:flex; align-items:center; gap:8px;}
+  .icon-toggle{
+    border:1px solid var(--border);
+    background:var(--panel);
+    width:36px;height:36px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .icon-toggle:hover{transform:translateY(-1px); box-shadow:var(--shadow-lift);}
+
+  /* date nav */
+  .datebar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    box-shadow:var(--shadow);
+    margin-bottom:16px;
+    transition:background-color .25s ease, border-color .25s ease;
+  }
+  .datebar .nav-btns{display:flex; gap:6px; align-items:center;}
+  .datebar button.icon{
+    border:none;background:var(--panel-2);
+    width:34px;height:34px;border-radius:11px;
+    font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text);
+    transition:background-color .15s ease, color .15s ease;
+  }
+  .datebar button.icon:hover{background:var(--accent-dim); color:var(--accent);}
+  .date-label{
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+    padding:2px 10px;
+    border-radius:10px;
+    transition:background-color .15s ease;
+  }
+  .date-label:hover{background:var(--panel-2);}
+  .date-label .main{font-size:16px; font-weight:700; letter-spacing:-0.01em;}
+  .date-label .sub{font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .today-btn{
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    border-radius:10px;
+    padding:6px 10px;
+    font-size:12px;
+    cursor:pointer;
+    color:var(--text-dim);
+    font-weight:600;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .today-btn:hover{color:var(--accent); border-color:var(--accent);}
+  input[type=date].hidden-date{
+    position:absolute;
+    opacity:0;
+    pointer-events:none;
+    width:0;height:0;
+  }
+
+  /* view mode tabs */
+  .view-tabs{
+    display:flex;
+    gap:4px;
+    margin-bottom:12px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:4px;
+    box-shadow:var(--shadow);
+  }
+  .view-tabs button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:8px;
+    border-radius:8px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--text-dim);
+    cursor:pointer;
+    transition:background-color .15s ease, color .15s ease;
+  }
+  .view-tabs button:hover{color:var(--text);}
+  .view-tabs button.active{
+    background:linear-gradient(120deg, var(--accent), var(--accent-2));
+    color:#fff;
+    box-shadow:0 4px 10px rgba(108,99,255,0.35);
+  }
+
+  /* month/year label row shared by week & month views */
+  .cal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .cal-header .cal-title{
+    font-size:14.5px;
+    font-weight:700;
+  }
+  .weekday-row{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+    margin-bottom:4px;
+  }
+  .weekday-row span{
+    text-align:center;
+    font-size:11px;
+    color:var(--text-dim);
+    font-weight:700;
+  }
+  .week-strip{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+  }
+  .week-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    padding:9px 2px;
+    border-radius:11px;
+    cursor:pointer;
+    background:var(--panel-2);
+    transition:background-color .15s ease, transform .1s ease;
+  }
+  .week-cell:hover{transform:translateY(-1px);}
+  .week-cell .wd{font-size:10.5px; color:var(--text-dim); font-weight:600;}
+  .week-cell .dn{font-size:14px; font-weight:700;}
+  .week-cell .dot{width:4px;height:4px;border-radius:50%; background:var(--accent); margin-top:1px; visibility:hidden;}
+  .week-cell.has-todo .dot{visibility:visible;}
+  .week-cell.today{background:var(--accent-dim); color:var(--accent);}
+  .week-cell.today .wd, .week-cell.today .dn{color:var(--accent);}
+  .week-cell.selected{background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; box-shadow:0 4px 12px rgba(108,99,255,0.35);}
+  .week-cell.selected .wd, .week-cell.selected .dn{color:#fff;}
+  .week-cell.selected .dot{background:#fff;}
+
+  .month-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+  }
+  .month-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    gap:3px;
+    padding:8px 2px;
+    border-radius:11px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    min-height:44px;
+    background:var(--panel-2);
+    transition:background-color .15s ease, transform .1s ease;
+  }
+  .month-cell:hover{transform:translateY(-1px);}
+  .month-cell.dim{color:var(--text-dim); opacity:.4;}
+  .month-cell .dot{width:4px;height:4px;border-radius:50%; background:var(--accent); margin-top:1px; visibility:hidden;}
+  .month-cell.has-todo .dot{visibility:visible;}
+  .month-cell.today{background:var(--accent-dim); color:var(--accent);}
+  .month-cell.selected{background:linear-gradient(135deg, var(--accent), var(--accent-2)); color:#fff; box-shadow:0 4px 12px rgba(108,99,255,0.35);}
+  .month-cell.selected .dot{background:#fff;}
+
+  /* tag filter row */
+  .tagbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .tag-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 12px;
+    border-radius:999px;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    border:1.5px solid transparent;
+    background:var(--panel);
+    color:var(--text-dim);
+    box-shadow:var(--shadow);
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .tag-chip:hover{transform:translateY(-1px);}
+  .tag-chip .dot{width:8px;height:8px;border-radius:50%;}
+  .tag-chip.active{border-color:currentColor; box-shadow:var(--shadow-lift);}
+  .tag-chip.all{font-weight:700;}
+  .tag-chip.add{background:transparent; box-shadow:none; border:1.5px dashed var(--border); color:var(--text-dim);}
+
+  /* add form */
+  .add-panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px;
+    margin-bottom:20px;
+    transition:background-color .25s ease, border-color .25s ease;
+  }
+  .add-row{
+    display:flex;
+    gap:8px;
+  }
+  .add-row input[type=text]{
+    flex:1;
+    border:1.5px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;
+    font-size:14.5px;
+    outline:none;
+    background:var(--panel-2);
+    color:var(--text);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .add-row input[type=text]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim);}
+  .add-row button.submit{
+    background:linear-gradient(120deg, var(--accent), var(--accent-2));
+    color:#fff;
+    border:none;
+    border-radius:var(--radius-sm);
+    padding:0 20px;
+    font-weight:700;
+    cursor:pointer;
+    font-size:14px;
+    box-shadow:0 4px 12px rgba(108,99,255,0.3);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .add-row button.submit:hover{transform:translateY(-1px); box-shadow:0 6px 16px rgba(108,99,255,0.4);}
+  .add-row button.submit:active{transform:translateY(0);}
+  .add-options{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  select, .opt-btn{
+    border:1.5px solid var(--border);
+    background:var(--panel-2);
+    border-radius:9px;
+    padding:7px 10px;
+    font-size:12.5px;
+    color:var(--text);
+    cursor:pointer;
+    transition:border-color .15s ease;
+  }
+  select:focus, select:hover{border-color:var(--accent);}
+  .weekday-picker{display:none; gap:4px;}
+  .weekday-picker.show{display:flex;}
+  .weekday-picker button{
+    width:28px;height:28px;
+    border-radius:8px;
+    border:1.5px solid var(--border);
+    background:var(--panel-2);
+    font-size:12px;
+    cursor:pointer;
+    color:var(--text-dim);
+    transition:background-color .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .weekday-picker button.sel{background:linear-gradient(120deg, var(--accent), var(--accent-2)); color:#fff; border-color:transparent;}
+
+  /* todo list */
+  .section-title{
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--text-dim);
+    margin:18px 0 8px 4px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .todo-list{display:flex; flex-direction:column; gap:8px;}
+  .todo-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:13px;
+    padding:12px 12px;
+    box-shadow:var(--shadow);
+    transition:background-color .2s ease, border-color .2s ease, box-shadow .15s ease, transform .1s ease;
+  }
+  .todo-item:hover{box-shadow:var(--shadow-lift);}
+  .todo-item.dragging{opacity:.35;}
+  .drag-handle{
+    flex:0 0 auto;
+    color:var(--text-dim);
+    font-size:14px;
+    cursor:grab;
+    padding:0 2px;
+    user-select:none;
+    opacity:.5;
+    transition:opacity .12s ease;
+  }
+  .todo-item:hover .drag-handle{opacity:1;}
+  .checkbox{
+    width:23px;height:23px;
+    border-radius:50%;
+    border:2px solid var(--border);
+    flex:0 0 auto;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;
+    font-size:12px;
+    transition:background-color .15s ease, border-color .15s ease, transform .1s ease;
+  }
+  .checkbox:hover{border-color:var(--accent); transform:scale(1.06);}
+  .checkbox.checked{background:linear-gradient(135deg, var(--accent), var(--accent-2)); border-color:transparent;}
+  .todo-main{flex:1; min-width:0;}
+  .todo-text{
+    font-size:14.5px;
+    font-weight:600;
+    word-break:break-word;
+  }
+  .todo-item.done{opacity:.7;}
+  .todo-item.done .todo-text{
+    text-decoration:line-through;
+    color:var(--done);
+  }
+  .todo-meta{
+    display:flex;
+    gap:6px;
+    align-items:center;
+    margin-top:5px;
+    flex-wrap:wrap;
+  }
+  .meta-tag{
+    font-size:11px;
+    font-weight:700;
+    padding:2px 9px;
+    border-radius:999px;
+  }
+  .meta-repeat{
+    font-size:11px;
+    color:var(--text-dim);
+    display:flex; align-items:center; gap:3px;
+  }
+  .todo-actions{display:flex; gap:4px;}
+  .todo-actions button{
+    border:none;
+    background:transparent;
+    color:var(--text-dim);
+    cursor:pointer;
+    width:28px;height:28px;
+    border-radius:8px;
+    font-size:14px;
+    transition:background-color .12s ease, color .12s ease;
+  }
+  .todo-actions button:hover{background:var(--panel-2); color:var(--text);}
+  .todo-actions button.del:hover{background:var(--panel-2); color:var(--danger);}
+
+  .empty{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:13.5px;
+    padding:44px 0;
+  }
+
+  /* tag manager modal */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(15,15,25,.45);
+    backdrop-filter:blur(2px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:22px;
+    width:100%;
+    max-width:340px;
+    box-shadow:0 20px 50px rgba(0,0,0,.25);
+  }
+  .modal h3{margin:0 0 14px; font-size:15px; font-weight:800;}
+  .modal-row{display:flex; gap:8px; margin-bottom:12px;}
+  .modal-row input[type=text]{
+    flex:1;border:1.5px solid var(--border); border-radius:9px; padding:9px 11px; font-size:13.5px; background:var(--panel-2); color:var(--text); outline:none;
+  }
+  .modal-row input[type=text]:focus{border-color:var(--accent);}
+  .color-swatches{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px;}
+  .swatch{width:23px;height:23px;border-radius:50%;cursor:pointer; border:2px solid transparent; transition:transform .12s ease;}
+  .swatch:hover{transform:scale(1.12);}
+  .swatch.sel{border-color:var(--text); transform:scale(1.12);}
+  .existing-tags{display:flex; flex-direction:column; gap:6px; max-height:200px; overflow-y:auto;}
+  .existing-tag-row{display:flex; align-items:center; gap:8px; font-size:13px; padding:4px 2px;}
+  .existing-tag-row .dot{width:10px;height:10px;border-radius:50%;}
+  .existing-tag-row .name{flex:1;}
+  .existing-tag-row button{border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:13px;}
+  .existing-tag-row button:hover{color:var(--danger);}
+  .modal-close{
+    margin-top:16px;
+    width:100%;
+    border:none;
+    background:linear-gradient(120deg, var(--accent), var(--accent-2));
+    color:#fff;
+    border-radius:11px;
+    padding:11px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(108,99,255,0.3);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>Too<span>do</span></h1>
+    <div class="top-actions">
+      <button class="icon-toggle" id="themeToggle" title="테마 전환">🌙</button>
+      <button class="today-btn" id="exportBtn" title="JSON 내보내기">내보내기</button>
+    </div>
+  </header>
+
+  <div class="view-tabs" id="viewTabs">
+    <button data-view="day">일간</button>
+    <button data-view="week">주간</button>
+    <button data-view="month">월간</button>
+  </div>
+
+  <div class="datebar" id="dateBarInner"></div>
+
+  <div class="tagbar" id="tagBar"></div>
+
+  <div class="add-panel">
+    <div class="add-row">
+      <input type="text" id="todoInput" placeholder="할 일을 입력하세요...">
+      <button class="submit" id="addBtn">추가</button>
+    </div>
+    <div class="add-options">
+      <select id="tagSelect"></select>
+      <select id="repeatSelect">
+        <option value="none">반복 안 함</option>
+        <option value="daily">매일</option>
+        <option value="weekly">매주</option>
+        <option value="monthly">매월</option>
+      </select>
+      <div class="weekday-picker" id="weekdayPicker">
+        <button data-d="0">일</button>
+        <button data-d="1">월</button>
+        <button data-d="2">화</button>
+        <button data-d="3">수</button>
+        <button data-d="4">목</button>
+        <button data-d="5">금</button>
+        <button data-d="6">토</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">할 일</div>
+  <div class="todo-list" id="pendingList"></div>
+
+  <div id="doneSection" style="display:none;">
+    <div class="section-title">완료됨</div>
+    <div class="todo-list" id="doneList"></div>
+  </div>
+</div>
+
+<div class="overlay" id="tagModalOverlay">
+  <div class="modal">
+    <h3>태그 관리</h3>
+    <div class="modal-row">
+      <input type="text" id="newTagName" placeholder="새 태그 이름">
+    </div>
+    <div class="color-swatches" id="colorSwatches"></div>
+    <button class="today-btn" id="createTagBtn" style="width:100%; margin-bottom:14px; padding:9px;">태그 추가</button>
+    <div class="existing-tags" id="existingTags"></div>
+    <button class="modal-close" id="closeTagModal">닫기</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'toodo_data_v1';
+  const THEME_KEY = 'toodo_theme';
+  const COLORS = ['#6c63ff','#ff5b6a','#00b894','#fdcb6e','#e17055','#00cec9','#6c5ce7','#fd79a8','#0984e3','#636e72'];
+  const WEEKDAY_LABEL = ['일','월','화','수','목','금','토'];
+
+  // ---------- theme ----------
+  function effectiveIsDark(){
+    const forced = document.documentElement.getAttribute('data-theme');
+    if(forced) return forced === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function applyThemeIcon(){
+    const btn = document.getElementById('themeToggle');
+    btn.textContent = effectiveIsDark() ? '☀️' : '🌙';
+  }
+  (function initTheme(){
+    const saved = localStorage.getItem(THEME_KEY);
+    if(saved === 'light' || saved === 'dark'){
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  })();
+  document.getElementById('themeToggle').onclick = ()=>{
+    const next = effectiveIsDark() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem(THEME_KEY, next);
+    applyThemeIcon();
+  };
+  applyThemeIcon();
+
+  function loadData(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return { tags: [], todos: [], completions: {}, order: {} };
+  }
+  function saveData(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  let data = loadData();
+  if(!data.order) data.order = {};
+  let selectedDate = new Date();
+  selectedDate.setHours(0,0,0,0);
+  let activeTagFilter = null; // null = all
+  let selectedColor = COLORS[0];
+  let editingId = null;
+  let viewMode = 'day'; // 'day' | 'week' | 'month'
+
+  function fmt(date){
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,'0');
+    const d = String(date.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  function parseDate(str){
+    const [y,m,d] = str.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    dt.setHours(0,0,0,0);
+    return dt;
+  }
+  function isSameDay(a,b){ return fmt(a) === fmt(b); }
+  function isToday(date){ return isSameDay(date, new Date()); }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- view tabs ----------
+  document.getElementById('viewTabs').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-view]');
+    if(!btn) return;
+    viewMode = btn.dataset.view;
+    renderAll();
+  });
+
+  function dateHasTodos(date){
+    return data.todos.some(t=>(!activeTagFilter || t.tagId===activeTagFilter) && occursOn(t, date));
+  }
+  function startOfWeek(date){
+    const d = new Date(date);
+    d.setDate(d.getDate() - d.getDay());
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  // ---------- date bar ----------
+  function renderDateBar(){
+    document.querySelectorAll('#viewTabs button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.view === viewMode);
+    });
+
+    const container = document.getElementById('dateBarInner');
+
+    if(viewMode === 'day'){
+      container.innerHTML = `
+        <div class="nav-btns"><button class="icon" data-action="prev">‹</button></div>
+        <div class="date-label" data-action="pick">
+          <div class="main">${selectedDate.getMonth()+1}월 ${selectedDate.getDate()}일 ${WEEKDAY_LABEL[selectedDate.getDay()]}요일${isToday(selectedDate) ? ' (오늘)' : ''}</div>
+          <div class="sub">${selectedDate.getFullYear()}</div>
+          <input type="date" class="hidden-date" id="datePicker" value="${fmt(selectedDate)}">
+        </div>
+        <div class="nav-btns">
+          <button class="today-btn" data-action="today">오늘</button>
+          <button class="icon" data-action="next">›</button>
+        </div>`;
+      container.className = 'datebar';
+      container.querySelector('[data-action="prev"]').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-1); renderAll(); };
+      container.querySelector('[data-action="next"]').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+1); renderAll(); };
+      container.querySelector('[data-action="today"]').onclick = ()=>{ selectedDate = new Date(); selectedDate.setHours(0,0,0,0); renderAll(); };
+      const picker = document.getElementById('datePicker');
+      container.querySelector('[data-action="pick"]').onclick = ()=>{
+        picker.showPicker ? picker.showPicker() : picker.click();
+      };
+      picker.onchange = (e)=>{
+        if(e.target.value){ selectedDate = parseDate(e.target.value); renderAll(); }
+      };
+    }
+
+    else if(viewMode === 'week'){
+      const start = startOfWeek(selectedDate);
+      let cellsHtml = '';
+      for(let i=0;i<7;i++){
+        const d = new Date(start);
+        d.setDate(start.getDate()+i);
+        const cls = ['week-cell'];
+        if(isToday(d)) cls.push('today');
+        if(isSameDay(d, selectedDate)) cls.push('selected');
+        if(dateHasTodos(d)) cls.push('has-todo');
+        cellsHtml += `<div class="${cls.join(' ')}" data-date="${fmt(d)}">
+          <span class="wd">${WEEKDAY_LABEL[d.getDay()]}</span>
+          <span class="dn">${d.getDate()}</span>
+          <span class="dot"></span>
+        </div>`;
+      }
+      const endOfWeek = new Date(start); endOfWeek.setDate(start.getDate()+6);
+      const titleTxt = start.getMonth()===endOfWeek.getMonth()
+        ? `${start.getFullYear()}년 ${start.getMonth()+1}월`
+        : `${start.getFullYear()}년 ${start.getMonth()+1}월 - ${endOfWeek.getMonth()+1}월`;
+      container.innerHTML = `
+        <div class="cal-header">
+          <button class="icon" data-action="prev">‹</button>
+          <span class="cal-title">${titleTxt}</span>
+          <div class="nav-btns">
+            <button class="today-btn" data-action="today">오늘</button>
+            <button class="icon" data-action="next">›</button>
+          </div>
+        </div>
+        <div class="week-strip">${cellsHtml}</div>`;
+      container.className = 'datebar';
+      container.style.display = 'block';
+      container.querySelector('[data-action="prev"]').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()-7); renderAll(); };
+      container.querySelector('[data-action="next"]').onclick = ()=>{ selectedDate.setDate(selectedDate.getDate()+7); renderAll(); };
+      container.querySelector('[data-action="today"]').onclick = ()=>{ selectedDate = new Date(); selectedDate.setHours(0,0,0,0); renderAll(); };
+      container.querySelectorAll('.week-cell').forEach(cell=>{
+        cell.onclick = ()=>{ selectedDate = parseDate(cell.dataset.date); renderAll(); };
+      });
+    }
+
+    else if(viewMode === 'month'){
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const firstOfMonth = new Date(year, month, 1);
+      const gridStart = startOfWeek(firstOfMonth);
+      let cellsHtml = '';
+      for(let i=0;i<42;i++){
+        const d = new Date(gridStart);
+        d.setDate(gridStart.getDate()+i);
+        const cls = ['month-cell'];
+        if(d.getMonth() !== month) cls.push('dim');
+        if(isToday(d)) cls.push('today');
+        if(isSameDay(d, selectedDate)) cls.push('selected');
+        if(dateHasTodos(d)) cls.push('has-todo');
+        cellsHtml += `<div class="${cls.join(' ')}" data-date="${fmt(d)}">
+          <span>${d.getDate()}</span>
+          <span class="dot"></span>
+        </div>`;
+      }
+      const weekdayHeader = WEEKDAY_LABEL.map(w=>`<span>${w}</span>`).join('');
+      container.innerHTML = `
+        <div class="cal-header">
+          <button class="icon" data-action="prev">‹</button>
+          <span class="cal-title">${year}년 ${month+1}월</span>
+          <div class="nav-btns">
+            <button class="today-btn" data-action="today">오늘</button>
+            <button class="icon" data-action="next">›</button>
+          </div>
+        </div>
+        <div class="weekday-row">${weekdayHeader}</div>
+        <div class="month-grid">${cellsHtml}</div>`;
+      container.className = 'datebar';
+      container.style.display = 'block';
+      container.querySelector('[data-action="prev"]').onclick = ()=>{ selectedDate = new Date(year, month-1, Math.min(selectedDate.getDate(),1)); renderAll(); };
+      container.querySelector('[data-action="next"]').onclick = ()=>{ selectedDate = new Date(year, month+1, Math.min(selectedDate.getDate(),1)); renderAll(); };
+      container.querySelector('[data-action="today"]').onclick = ()=>{ selectedDate = new Date(); selectedDate.setHours(0,0,0,0); renderAll(); };
+      container.querySelectorAll('.month-cell').forEach(cell=>{
+        cell.onclick = ()=>{ selectedDate = parseDate(cell.dataset.date); renderAll(); };
+      });
+    }
+  }
+
+  // ---------- tag bar ----------
+  function renderTagBar(){
+    const bar = document.getElementById('tagBar');
+    bar.innerHTML = '';
+
+    const allChip = document.createElement('div');
+    allChip.className = 'tag-chip all' + (activeTagFilter === null ? ' active' : '');
+    allChip.style.color = activeTagFilter === null ? 'var(--accent)' : '';
+    allChip.textContent = '전체';
+    allChip.onclick = ()=>{ activeTagFilter = null; renderAll(); };
+    bar.appendChild(allChip);
+
+    data.tags.forEach(tag=>{
+      const chip = document.createElement('div');
+      chip.className = 'tag-chip' + (activeTagFilter === tag.id ? ' active' : '');
+      chip.style.color = activeTagFilter === tag.id ? tag.color : '';
+      chip.innerHTML = `<span class="dot" style="background:${tag.color}"></span>${escapeHtml(tag.name)}`;
+      chip.onclick = ()=>{ activeTagFilter = (activeTagFilter === tag.id) ? null : tag.id; renderAll(); };
+      bar.appendChild(chip);
+    });
+
+    const addChip = document.createElement('div');
+    addChip.className = 'tag-chip add';
+    addChip.textContent = '+ 태그 관리';
+    addChip.onclick = openTagModal;
+    bar.appendChild(addChip);
+  }
+
+  function renderTagSelect(){
+    const sel = document.getElementById('tagSelect');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">태그 없음</option>';
+    data.tags.forEach(tag=>{
+      const opt = document.createElement('option');
+      opt.value = tag.id;
+      opt.textContent = tag.name;
+      sel.appendChild(opt);
+    });
+    if([...sel.options].some(o=>o.value===prev)) sel.value = prev;
+  }
+
+  // ---------- tag modal ----------
+  function renderColorSwatches(){
+    const wrap = document.getElementById('colorSwatches');
+    wrap.innerHTML = '';
+    COLORS.forEach(c=>{
+      const sw = document.createElement('div');
+      sw.className = 'swatch' + (c===selectedColor ? ' sel' : '');
+      sw.style.background = c;
+      sw.onclick = ()=>{ selectedColor = c; renderColorSwatches(); };
+      wrap.appendChild(sw);
+    });
+  }
+  function renderExistingTags(){
+    const wrap = document.getElementById('existingTags');
+    wrap.innerHTML = '';
+    if(data.tags.length===0){
+      wrap.innerHTML = '<div style="color:var(--text-dim); font-size:12.5px;">아직 태그가 없습니다.</div>';
+      return;
+    }
+    data.tags.forEach(tag=>{
+      const row = document.createElement('div');
+      row.className = 'existing-tag-row';
+      row.innerHTML = `<span class="dot" style="background:${tag.color}"></span><span class="name">${escapeHtml(tag.name)}</span>`;
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '삭제';
+      delBtn.onclick = ()=>{
+        if(confirm(`'${tag.name}' 태그를 삭제할까요? 이 태그가 지정된 할 일의 태그도 해제됩니다.`)){
+          data.tags = data.tags.filter(t=>t.id!==tag.id);
+          data.todos.forEach(t=>{ if(t.tagId===tag.id) t.tagId = null; });
+          saveData();
+          renderExistingTags();
+          renderTagBar();
+          renderTagSelect();
+          renderLists();
+        }
+      };
+      row.appendChild(delBtn);
+      wrap.appendChild(row);
+    });
+  }
+  function openTagModal(){
+    selectedColor = COLORS[0];
+    renderColorSwatches();
+    renderExistingTags();
+    document.getElementById('newTagName').value = '';
+    document.getElementById('tagModalOverlay').classList.add('show');
+  }
+  document.getElementById('closeTagModal').onclick = ()=>{
+    document.getElementById('tagModalOverlay').classList.remove('show');
+  };
+  document.getElementById('tagModalOverlay').onclick = (e)=>{
+    if(e.target.id === 'tagModalOverlay') e.target.classList.remove('show');
+  };
+  document.getElementById('createTagBtn').onclick = ()=>{
+    const name = document.getElementById('newTagName').value.trim();
+    if(!name) return;
+    data.tags.push({ id: uid(), name, color: selectedColor });
+    saveData();
+    document.getElementById('newTagName').value = '';
+    renderExistingTags();
+    renderTagBar();
+    renderTagSelect();
+  };
+
+  // ---------- repeat option UI ----------
+  const repeatSelect = document.getElementById('repeatSelect');
+  const weekdayPicker = document.getElementById('weekdayPicker');
+  let selectedWeekdays = new Set();
+  repeatSelect.onchange = ()=>{
+    weekdayPicker.classList.toggle('show', repeatSelect.value === 'weekly');
+  };
+  weekdayPicker.querySelectorAll('button').forEach(btn=>{
+    btn.onclick = ()=>{
+      const d = btn.dataset.d;
+      if(selectedWeekdays.has(d)){ selectedWeekdays.delete(d); btn.classList.remove('sel'); }
+      else { selectedWeekdays.add(d); btn.classList.add('sel'); }
+    };
+  });
+
+  // ---------- add todo ----------
+  function addTodo(){
+    const input = document.getElementById('todoInput');
+    const text = input.value.trim();
+    if(!text) return;
+    const tagId = document.getElementById('tagSelect').value || null;
+    const repeatType = repeatSelect.value;
+    const repeat = { type: repeatType };
+    if(repeatType === 'weekly'){
+      repeat.weekdays = selectedWeekdays.size ? [...selectedWeekdays].map(Number) : [selectedDate.getDay()];
+    }
+    if(repeatType === 'monthly'){
+      repeat.day = selectedDate.getDate();
+    }
+
+    if(editingId){
+      const todo = data.todos.find(t=>t.id===editingId);
+      if(todo){
+        todo.text = text;
+        todo.tagId = tagId;
+        todo.repeat = repeat;
+      }
+      editingId = null;
+      document.getElementById('addBtn').textContent = '추가';
+    } else {
+      data.todos.push({
+        id: uid(),
+        text,
+        tagId,
+        date: fmt(selectedDate),
+        repeat
+      });
+    }
+
+    saveData();
+    input.value = '';
+    repeatSelect.value = 'none';
+    weekdayPicker.classList.remove('show');
+    selectedWeekdays.clear();
+    weekdayPicker.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
+    renderLists();
+  }
+  document.getElementById('pendingList').addEventListener('dragover', (e)=>{
+    if(e.target.id !== 'pendingList') return;
+    e.preventDefault();
+    const pendingList = e.target;
+    const dragging = pendingList.querySelector('.dragging');
+    if(dragging) pendingList.appendChild(dragging);
+  });
+
+  document.getElementById('addBtn').onclick = addTodo;
+  document.getElementById('todoInput').addEventListener('keydown', (e)=>{
+    if(e.key==='Enter') addTodo();
+  });
+
+  // ---------- occurrence logic ----------
+  function occursOn(todo, date){
+    const start = parseDate(todo.date);
+    if(date < start) return false;
+    const rep = todo.repeat || { type:'none' };
+    switch(rep.type){
+      case 'none':
+        return isSameDay(date, start);
+      case 'daily':
+        return true;
+      case 'weekly':
+        return (rep.weekdays||[start.getDay()]).includes(date.getDay());
+      case 'monthly':
+        return date.getDate() === (rep.day || start.getDate());
+      default:
+        return false;
+    }
+  }
+  function isCompleted(todo, dateStr){
+    const arr = data.completions[todo.id];
+    return !!(arr && arr.includes(dateStr));
+  }
+  function toggleCompleted(todo, dateStr){
+    if(!data.completions[todo.id]) data.completions[todo.id] = [];
+    const arr = data.completions[todo.id];
+    const idx = arr.indexOf(dateStr);
+    if(idx>=0) arr.splice(idx,1);
+    else arr.push(dateStr);
+    saveData();
+  }
+
+  function repeatLabel(todo){
+    const rep = todo.repeat || {type:'none'};
+    if(rep.type==='none') return null;
+    if(rep.type==='daily') return '매일';
+    if(rep.type==='weekly') return '매주 ' + (rep.weekdays||[]).slice().sort().map(d=>WEEKDAY_LABEL[d]).join(',');
+    if(rep.type==='monthly') return `매월 ${rep.day}일`;
+    return null;
+  }
+
+  // ---------- render list ----------
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function sortByOrder(todos, dateStr){
+    const order = data.order[dateStr];
+    if(!order || !order.length) return todos;
+    const idx = new Map(order.map((id,i)=>[id,i]));
+    return todos.slice().sort((a,b)=>{
+      const ai = idx.has(a.id) ? idx.get(a.id) : Infinity;
+      const bi = idx.has(b.id) ? idx.get(b.id) : Infinity;
+      return ai - bi;
+    });
+  }
+
+  function persistOrderFromDOM(dateStr){
+    const pendingList = document.getElementById('pendingList');
+    const ids = Array.from(pendingList.children)
+      .map(el=>el.dataset && el.dataset.id)
+      .filter(Boolean);
+    if(ids.length){
+      data.order[dateStr] = ids;
+      saveData();
+    }
+  }
+
+  function renderLists(){
+    const dateStr = fmt(selectedDate);
+    let todos = data.todos.filter(t=>occursOn(t, selectedDate));
+    if(activeTagFilter) todos = todos.filter(t=>t.tagId===activeTagFilter);
+
+    const pending = [];
+    const done = [];
+    todos.forEach(t=>{
+      (isCompleted(t, dateStr) ? done : pending).push(t);
+    });
+    const orderedPending = sortByOrder(pending, dateStr);
+
+    const pendingList = document.getElementById('pendingList');
+    const doneList = document.getElementById('doneList');
+    const doneSection = document.getElementById('doneSection');
+    pendingList.innerHTML = '';
+    doneList.innerHTML = '';
+
+    if(orderedPending.length===0){
+      pendingList.innerHTML = '<div class="empty">할 일이 없습니다 🌤️</div>';
+    } else {
+      orderedPending.forEach(t=>pendingList.appendChild(renderItem(t, dateStr, false)));
+    }
+
+    if(done.length>0){
+      doneSection.style.display = '';
+      done.forEach(t=>doneList.appendChild(renderItem(t, dateStr, true)));
+    } else {
+      doneSection.style.display = 'none';
+    }
+  }
+
+  function renderItem(todo, dateStr, done){
+    const tag = data.tags.find(t=>t.id===todo.tagId);
+    const item = document.createElement('div');
+    item.className = 'todo-item' + (done ? ' done' : '');
+    item.dataset.id = todo.id;
+
+    if(!done){
+      item.draggable = true;
+      const handle = document.createElement('div');
+      handle.className = 'drag-handle';
+      handle.textContent = '⠿';
+      item.appendChild(handle);
+
+      item.addEventListener('dragstart', ()=>{
+        item.classList.add('dragging');
+      });
+      item.addEventListener('dragend', ()=>{
+        item.classList.remove('dragging');
+        persistOrderFromDOM(dateStr);
+      });
+      item.addEventListener('dragover', (e)=>{
+        e.preventDefault();
+        const pendingList = document.getElementById('pendingList');
+        const dragging = pendingList.querySelector('.dragging');
+        if(!dragging || dragging === item) return;
+        const rect = item.getBoundingClientRect();
+        const before = (e.clientY - rect.top) < rect.height/2;
+        pendingList.insertBefore(dragging, before ? item : item.nextSibling);
+      });
+    }
+
+    const cb = document.createElement('div');
+    cb.className = 'checkbox' + (done ? ' checked' : '');
+    cb.textContent = done ? '✓' : '';
+    cb.onclick = ()=>{ toggleCompleted(todo, dateStr); renderLists(); };
+    item.appendChild(cb);
+
+    const main = document.createElement('div');
+    main.className = 'todo-main';
+    const textEl = document.createElement('div');
+    textEl.className = 'todo-text';
+    textEl.textContent = todo.text;
+    main.appendChild(textEl);
+
+    const meta = document.createElement('div');
+    meta.className = 'todo-meta';
+    if(tag){
+      const tagEl = document.createElement('span');
+      tagEl.className = 'meta-tag';
+      tagEl.style.background = tag.color + '22';
+      tagEl.style.color = tag.color;
+      tagEl.textContent = tag.name;
+      meta.appendChild(tagEl);
+    }
+    const rl = repeatLabel(todo);
+    if(rl){
+      const repEl = document.createElement('span');
+      repEl.className = 'meta-repeat';
+      repEl.textContent = '↻ ' + rl;
+      meta.appendChild(repEl);
+    }
+    if(meta.children.length) main.appendChild(meta);
+    item.appendChild(main);
+
+    const actions = document.createElement('div');
+    actions.className = 'todo-actions';
+    const editBtn = document.createElement('button');
+    editBtn.textContent = '✎';
+    editBtn.onclick = ()=>startEdit(todo);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'del';
+    delBtn.textContent = '✕';
+    delBtn.onclick = ()=>{
+      if(confirm('이 할 일을 삭제할까요?' + (todo.repeat && todo.repeat.type!=='none' ? ' (반복 할일 전체가 삭제됩니다)' : ''))){
+        data.todos = data.todos.filter(t=>t.id!==todo.id);
+        delete data.completions[todo.id];
+        saveData();
+        renderLists();
+      }
+    };
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+    item.appendChild(actions);
+
+    return item;
+  }
+
+  function startEdit(todo){
+    editingId = todo.id;
+    document.getElementById('todoInput').value = todo.text;
+    document.getElementById('todoInput').focus();
+    document.getElementById('tagSelect').value = todo.tagId || '';
+    const rep = todo.repeat || {type:'none'};
+    repeatSelect.value = rep.type;
+    weekdayPicker.classList.toggle('show', rep.type==='weekly');
+    selectedWeekdays = new Set((rep.weekdays||[]).map(String));
+    weekdayPicker.querySelectorAll('button').forEach(b=>{
+      b.classList.toggle('sel', selectedWeekdays.has(b.dataset.d));
+    });
+    document.getElementById('addBtn').textContent = '수정';
+  }
+
+  // ---------- export ----------
+  document.getElementById('exportBtn').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `toodo-backup-${fmt(new Date())}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  function renderAll(){
+    renderDateBar();
+    renderTagBar();
+    renderTagSelect();
+    renderLists();
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
