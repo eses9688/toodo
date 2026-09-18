@@ -574,6 +574,22 @@
   </div>
 </div>
 
+<div class="overlay" id="authModalOverlay">
+  <div class="modal">
+    <h3>로그인 / 회원가입</h3>
+    <div class="modal-row">
+      <input type="text" id="authIdInput" placeholder="아이디 (영문/숫자, 3자 이상)" autocomplete="username">
+    </div>
+    <div class="modal-row">
+      <input type="password" id="authPwInput" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+    </div>
+    <div id="authMsg" style="font-size:12.5px; color:var(--danger); margin:-4px 0 12px; min-height:1em;"></div>
+    <button class="today-btn" id="authLoginBtn" style="width:100%; margin-bottom:8px; padding:9px;">로그인</button>
+    <button class="today-btn" id="authSignupBtn" style="width:100%; margin-bottom:14px; padding:9px;">회원가입</button>
+    <button class="modal-close" id="closeAuthModal">닫기</button>
+  </div>
+</div>
+
 <div class="overlay" id="tagModalOverlay">
   <div class="modal">
     <h3>태그 관리</h3>
@@ -651,8 +667,8 @@
   function updateAuthBtn(){
     const btn = document.getElementById('authBtn');
     if(!firebaseReady){ btn.style.display = 'none'; return; }
-    btn.textContent = currentUser ? '로그아웃' : '로그인';
-    btn.title = currentUser ? `${currentUser.displayName || currentUser.email} (로그아웃)` : 'Google 계정으로 로그인';
+    btn.textContent = currentUser ? `${currentUser.displayName} 로그아웃` : '로그인';
+    btn.title = currentUser ? `${currentUser.displayName} (클릭하여 로그아웃)` : '아이디로 로그인 / 회원가입';
   }
 
   document.getElementById('authBtn').onclick = async ()=>{
@@ -660,10 +676,66 @@
     if(currentUser){
       await auth.signOut();
     } else {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      try{ await auth.signInWithPopup(provider); }
-      catch(e){ alert('로그인에 실패했습니다: ' + e.message); }
+      openAuthModal();
     }
+  };
+
+  function sanitizeId(raw){
+    return (raw || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  }
+  function idToEmail(id){
+    return `${id}@toodo.local`;
+  }
+  function authErrorMessage(e){
+    switch(e.code){
+      case 'auth/email-already-in-use': return '이미 사용 중인 아이디입니다.';
+      case 'auth/weak-password': return '비밀번호는 6자 이상이어야 합니다.';
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+      case 'auth/invalid-credential': return '아이디 또는 비밀번호가 올바르지 않습니다.';
+      default: return e.message;
+    }
+  }
+
+  function openAuthModal(){
+    document.getElementById('authIdInput').value = '';
+    document.getElementById('authPwInput').value = '';
+    document.getElementById('authMsg').textContent = '';
+    document.getElementById('authModalOverlay').classList.add('show');
+  }
+  document.getElementById('closeAuthModal').onclick = ()=>{
+    document.getElementById('authModalOverlay').classList.remove('show');
+  };
+  document.getElementById('authModalOverlay').onclick = (e)=>{
+    if(e.target.id === 'authModalOverlay') e.target.classList.remove('show');
+  };
+
+  document.getElementById('authSignupBtn').onclick = async ()=>{
+    const id = sanitizeId(document.getElementById('authIdInput').value);
+    const pw = document.getElementById('authPwInput').value;
+    const msg = document.getElementById('authMsg');
+    if(id.length < 3){ msg.textContent = '아이디는 영문/숫자 3자 이상이어야 합니다.'; return; }
+    if(pw.length < 6){ msg.textContent = '비밀번호는 6자 이상이어야 합니다.'; return; }
+    try{
+      const cred = await auth.createUserWithEmailAndPassword(idToEmail(id), pw);
+      await cred.user.updateProfile({ displayName: id });
+      await db.collection('user_directory').doc(cred.user.uid).set({
+        username: id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('authModalOverlay').classList.remove('show');
+    }catch(e){ msg.textContent = authErrorMessage(e); }
+  };
+
+  document.getElementById('authLoginBtn').onclick = async ()=>{
+    const id = sanitizeId(document.getElementById('authIdInput').value);
+    const pw = document.getElementById('authPwInput').value;
+    const msg = document.getElementById('authMsg');
+    if(!id || !pw){ msg.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
+    try{
+      await auth.signInWithEmailAndPassword(idToEmail(id), pw);
+      document.getElementById('authModalOverlay').classList.remove('show');
+    }catch(e){ msg.textContent = authErrorMessage(e); }
   };
 
   async function pullCloudData(uidStr){
