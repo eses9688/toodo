@@ -132,9 +132,10 @@
     messagingSenderId: "312559660595",
     appId: "1:312559660595:web:fa8b39a0f6b6a5c78ebd46"
   };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
+  const adminApp = firebase.initializeApp(firebaseConfig, 'adminApp');
+  const auth = adminApp.auth();
+  const db = adminApp.firestore();
+  auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
   function sanitizeId(raw){ return (raw||'').trim().toLowerCase().replace(/[^a-z0-9_-]/g,''); }
   function idToEmail(id){ return `${id}@toodo.local`; }
