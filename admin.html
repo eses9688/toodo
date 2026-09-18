@@ -74,7 +74,6 @@
     border:1px solid var(--border);
     border-radius:10px;
     padding:10px 12px;
-    cursor:pointer;
     font-size:13.5px;
   }
   .user-row:hover{border-color:var(--accent);}
@@ -175,24 +174,53 @@
   async function loadUserList(){
     const listEl = document.getElementById('userList');
     const msgEl = document.getElementById('listMsg');
-    listEl.innerHTML = '';
+    listEl.innerHTML = '불러오는 중...';
     msgEl.textContent = '';
     try{
       const snap = await db.collection('user_directory').orderBy('createdAt','asc').get();
+      listEl.innerHTML = '';
       if(snap.empty){
         listEl.innerHTML = '<div class="empty">등록된 사용자가 없습니다.</div>';
         return;
       }
-      snap.forEach(doc=>{
+      const docs = snap.docs;
+      const counts = await Promise.all(docs.map(d=>
+        db.collection('toodo_users').doc(d.id).get()
+          .then(s=> (s.exists && s.data().todos) ? s.data().todos.length : 0)
+          .catch(()=>'-')
+      ));
+      docs.forEach((doc,i)=>{
         const u = doc.data();
+        const created = (u.createdAt && u.createdAt.toDate) ? u.createdAt.toDate().toLocaleDateString('ko-KR') : '-';
         const row = document.createElement('div');
         row.className = 'user-row';
-        row.innerHTML = `<span>${escapeHtml(u.username || '(이름 없음)')}</span><span class="uid">${doc.id}</span>`;
-        row.onclick = ()=> showUserDetail(doc.id, u.username);
+        row.innerHTML = `
+          <div style="cursor:pointer; flex:1;" data-role="open">
+            <span>${escapeHtml(u.username || '(이름 없음)')}</span>
+            <span class="uid">${doc.id} · 가입 ${created} · 할일 ${counts[i]}개</span>
+          </div>
+          <button class="ghost del-btn" style="padding:6px 10px; font-size:12px; margin-left:8px;">삭제</button>
+        `;
+        row.querySelector('[data-role="open"]').onclick = ()=> showUserDetail(doc.id, u.username);
+        row.querySelector('.del-btn').onclick = (e)=>{
+          e.stopPropagation();
+          deleteUser(doc.id, u.username);
+        };
         listEl.appendChild(row);
       });
     }catch(e){
       msgEl.textContent = '목록을 불러올 수 없습니다 (관리자 권한이 없을 수 있습니다): ' + e.message;
+    }
+  }
+
+  async function deleteUser(uid, username){
+    if(!confirm(`'${username}' 사용자의 할일/태그 데이터를 삭제할까요?\n(로그인 계정 자체는 지워지지 않습니다 — 완전히 없애려면 Firebase 콘솔 Authentication 탭에서 별도로 삭제하세요)`)) return;
+    try{
+      await db.collection('toodo_users').doc(uid).delete();
+      await db.collection('user_directory').doc(uid).delete();
+      loadUserList();
+    }catch(e){
+      alert('삭제 실패: ' + e.message);
     }
   }
 
